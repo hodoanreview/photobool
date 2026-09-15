@@ -323,10 +323,12 @@ export default function PhotoStripPreview({
 
   const downloadTimelapse = () => {
     if (!timelapseBlob) return;
+    const isMp4 = timelapseBlob.type.includes('mp4');
+    const ext = isMp4 ? 'mp4' : 'webm';
     const url = URL.createObjectURL(timelapseBlob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = `photobool_timelapse_5s_${Date.now()}.webm`;
+    link.download = `photobool_timelapse_5s_${Date.now()}.${ext}`;
     link.click();
   };
 
@@ -371,11 +373,13 @@ export default function PhotoStripPreview({
       // 2. Upload photo strip
       const photoCloudUrl = await uploadFileToCloud(photoBlob, `strip_${Date.now()}.png`);
 
-      // 3. Upload timelapse if exists
+      // 3. Upload timelapse if exists (use .mp4)
       let videoCloudUrl = '';
       if (timelapseBlob) {
         try {
-          videoCloudUrl = await uploadFileToCloud(timelapseBlob, `timelapse_${Date.now()}.webm`);
+          const isMp4 = timelapseBlob.type.includes('mp4');
+          const ext = isMp4 ? 'mp4' : 'webm';
+          videoCloudUrl = await uploadFileToCloud(timelapseBlob, `timelapse_${Date.now()}.${ext}`);
         } catch (e) {
           console.warn('Video upload skipped:', e);
         }

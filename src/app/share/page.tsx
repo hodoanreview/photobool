@@ -22,14 +22,22 @@ function ShareContent() {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
-      const mimeType = type === 'image' ? 'image/png' : 'video/webm';
+
+      // Auto detect mime type, prefer mp4 for video
+      let mimeType = blob.type;
+      if (type === 'video' && (!mimeType || mimeType.includes('webm'))) {
+        mimeType = 'video/mp4';
+      } else if (type === 'image' && !mimeType) {
+        mimeType = 'image/png';
+      }
+
       const file = new File([blob], filename, { type: mimeType });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: 'Photobool Photo',
-          text: 'Ảnh kỷ niệm Photobool của tôi!',
+          title: 'Photobool Timelapse',
+          text: 'Video kỷ niệm Photobool của tôi!',
         });
       } else {
         const blobUrl = URL.createObjectURL(blob);
@@ -85,7 +93,7 @@ function ShareContent() {
           color="primary"
           fullWidth
           startIcon={<ShareIcon />}
-          onClick={() => handleSaveToPhotoApp(photoUrl, `photobool_${Date.now()}.png`, 'image')}
+          onClick={() => handleSaveToPhotoApp(videoUrl, `timelapse_${Date.now()}.mp4`, 'video')}
           sx={{ mt: 1.5, borderRadius: 8, py: 1.2, fontWeight: 'bold' }}
         >
           Lưu Dải Ảnh vào Thư Viện
