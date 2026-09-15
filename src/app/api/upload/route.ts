@@ -1,50 +1,37 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File | null;
+    const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: "Không tìm thấy file" },
-        { status: 400 },
-      );
+      return NextResponse.json({ success: false, error: 'Không tìm thấy file' }, { status: 400 });
     }
 
-    // Forward file to temporary cloud storage (tmpfiles.org)
+    // Upload to Litterbox (Catbox temporary storage - lasts 24h, 100% free, direct link, no CORS block)
     const uploadBody = new FormData();
-    uploadBody.append("file", file);
+    uploadBody.append('reqtype', 'fileupload');
+    uploadBody.append('time', '24h'); // Lưu trữ 24 giờ - quá đủ để khách tải về máy
+    uploadBody.append('fileToUpload', file);
 
-    const res = await fetch("https://tmpfiles.org/api/v1/upload", {
-      method: "POST",
+    const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+      method: 'POST',
       body: uploadBody,
     });
 
-    const result = await res.json();
+    const directUrl = (await res.text()).trim();
 
-    if (result.status !== "success" || !result.data?.url) {
-      return NextResponse.json(
-        { success: false, error: "Upload lên đám mây thất bại" },
-        { status: 502 },
-      );
+    if (!directUrl.startsWith('https://')) {
+      return NextResponse.json({ success: false, error: 'Upload thất bại' }, { status: 502 });
     }
-
-    // Convert preview link to direct download link (e.g. https://tmpfiles.org/123/name -> https://tmpfiles.org/dl/123/name)
-    const directUrl = result.data.url.replace(
-      "https://tmpfiles.org/",
-      "https://tmpfiles.org/dl/",
-    );
 
     return NextResponse.json({
       success: true,
-      url: directUrl,
+      url: directUrl, // Link trực tiếp dạng https://litter.catbox.moe/xyz.png hoặc .webm
     });
   } catch (error) {
-    console.error("API Upload error:", error);
-    return NextResponse.json(
-      { success: false, error: "Lỗi máy chủ nội bộ" },
-      { status: 500 },
-    );
+    console.error('API Upload error:', error);
+    return NextResponse.json({ success: false, error: 'Lỗi máy chủ nội bộ' }, { status: 500 });
   }
 }
