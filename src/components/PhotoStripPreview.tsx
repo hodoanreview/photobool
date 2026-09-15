@@ -363,67 +363,46 @@ export default function PhotoStripPreview({
 
       // 1. Render photo canvas
       const canvas = await renderStripCanvas();
-      if (!canvas) throw new Error("Không thể render ảnh");
+      if (!canvas) throw new Error('Không thể render ảnh');
 
-      const photoBlob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/png"),
-      );
-      if (!photoBlob) throw new Error("Lỗi chuyển đổi ảnh");
+      const photoBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!photoBlob) throw new Error('Lỗi chuyển đổi ảnh');
 
       // 2. Upload photo strip
-      const photoCloudUrl = await uploadFileToCloud(
-        photoBlob,
-        `strip_${Date.now()}.png`,
-      );
+      const photoCloudUrl = await uploadFileToCloud(photoBlob, `strip_${Date.now()}.png`);
 
       // 3. Upload timelapse if exists
-      let videoCloudUrl: string | undefined;
+      let videoCloudUrl = '';
       if (timelapseBlob) {
         try {
-          videoCloudUrl = await uploadFileToCloud(
-            timelapseBlob,
-            `timelapse_${Date.now()}.webm`,
-          );
+          videoCloudUrl = await uploadFileToCloud(timelapseBlob, `timelapse_${Date.now()}.webm`);
         } catch (e) {
-          console.warn("Video upload skipped:", e);
+          console.warn('Video upload skipped:', e);
         }
       }
 
-      // 4. Create Session in API
-      const sessionRes = await fetch("/api/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          photoUrl: photoCloudUrl,
-          videoUrl: videoCloudUrl,
-        }),
-      });
-
-      const sessionData = await sessionRes.json();
-      if (!sessionData.success || !sessionData.sessionId) {
-        throw new Error("Không thể tạo phiên nhận ảnh");
+      // 4. Generate Share Link embedding photo and video URLs directly
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://photobool.app';
+      const queryParams = new URLSearchParams();
+      queryParams.set('photo', photoCloudUrl);
+      if (videoCloudUrl) {
+        queryParams.set('video', videoCloudUrl);
       }
 
-      // 5. Generate Share Link and QR Code
-      const origin =
-        typeof window !== "undefined"
-          ? window.location.origin
-          : "https://photobool.app";
-      const shareUrl = `${origin}/share?id=${sessionData.sessionId}`;
+      const shareUrl = `${origin}/share?${queryParams.toString()}`;
       setSharePageUrl(shareUrl);
 
+      // 5. Create QR Code
       const qr = await QRCode.toDataURL(shareUrl, {
         width: 260,
         margin: 2,
-        color: { dark: "#000000", light: "#ffffff" },
+        color: { dark: '#000000', light: '#ffffff' },
       });
 
       setShareQrCodeUrl(qr);
     } catch (err: unknown) {
-      console.error("Share generation error:", err);
-      setUploadError(
-        err instanceof Error ? err.message : "Có lỗi xảy ra khi tạo mã QR",
-      );
+      console.error('Share generation error:', err);
+      setUploadError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo mã QR');
     } finally {
       setIsUploading(false);
     }
