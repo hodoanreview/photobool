@@ -36,8 +36,8 @@ function ShareContent() {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: 'Photobool Timelapse',
-          text: 'Video kỷ niệm Photobool của tôi!',
+          title: type === 'image' ? 'Photobool Strip' : 'Photobool Timelapse',
+          text: 'Kỷ niệm Photobool của tôi!',
         });
       } else {
         const blobUrl = URL.createObjectURL(blob);
@@ -93,7 +93,7 @@ function ShareContent() {
           color="primary"
           fullWidth
           startIcon={<ShareIcon />}
-          onClick={() => handleSaveToPhotoApp(videoUrl, `timelapse_${Date.now()}.mp4`, 'video')}
+          onClick={() => handleSaveToPhotoApp(photoUrl, `photobool_${Date.now()}.png`, 'image')}
           sx={{ mt: 1.5, borderRadius: 8, py: 1.2, fontWeight: 'bold' }}
         >
           Lưu Dải Ảnh vào Thư Viện
@@ -125,7 +125,11 @@ function ShareContent() {
             color="secondary"
             fullWidth
             startIcon={<DownloadIcon />}
-            onClick={() => handleSaveToPhotoApp(videoUrl, `timelapse_${Date.now()}.webm`, 'video')}
+            onClick={() => {
+              if (videoUrl) {
+                handleSaveToPhotoApp(videoUrl, `timelapse_${Date.now()}.mp4`, 'video');
+              }
+            }}
             sx={{ mt: 1.5, borderRadius: 8, py: 1.2, fontWeight: 'bold' }}
           >
             Lưu Video vào Thư Viện
